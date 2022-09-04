@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <float.h> 
 #include <ctype.h>
 #include <string.h>
 
@@ -57,10 +56,45 @@ double *eigenvalues = NULL;
 char* Normalized_Spectral_Clustering(char* goal, int n,int dim, char* vectorsFile, int kToCheck) {
     
     numOfVec = n;
-    eigenvalues = (double *)malloc(sizeof(double)*n);
-    eigenvaluesCopy = (double *)malloc(sizeof(double)*n);
+    eigenvalues = (double*)malloc(sizeof(double)*n);
+    eigenvaluesCopy = (double*)malloc(sizeof(double)*n);
     vectors = matrixAlloc(numOfVec, dim);
     readInput(vectorsFile ,vectors);
+
+    /*creat the Identity matrix */
+    V =  matrixAlloc(numOfVec, numOfVec);
+    for (i1=0;i1<numOfVec;i1++){
+        for (i2=0;i2<numOfVec;i2++){
+            if(i1==i2){
+                V[i1][i2]=1.0;
+            }
+            else{
+                V[i1][i2]=0.0;
+            }
+        }
+    }
+
+    /*goal="jacobi"*/
+    if(strcmp(goal,"jacobi")==0){
+        P = matrixAlloc(numOfVec, numOfVec);
+        P_T = matrixAlloc(numOfVec, numOfVec);
+        A0 = matrixAlloc(numOfVec, numOfVec);
+        A1 = matrixAlloc(numOfVec, numOfVec);
+        copyOfV = matrixAlloc(numOfVec, numOfVec);
+        Jacobi_algorithm(vectors,V,numOfVec);
+        for(i1=0;i1<numOfVec;++i1){
+            if(i1==numOfVec-1){
+                printf("%.4f\n", eigenvalues[i1]);
+            }
+            else{
+                printf("%.4f,", eigenvalues[i1]);
+            }
+        }
+        printMatrix(V,numOfVec,numOfVec);
+        stage=-1;
+        freeFunc();
+        return "";
+    }
 
     /*creating W*/
     W = matrixAlloc(numOfVec, numOfVec);
@@ -89,19 +123,6 @@ char* Normalized_Spectral_Clustering(char* goal, int n,int dim, char* vectorsFil
         D[i1][i1]=1/sqrt(D[i1][i1]);
     }
 
-    /*creat the Identity matrix */
-    V =  matrixAlloc(numOfVec, numOfVec);
-    for (i1=0;i1<numOfVec;i1++){
-        for (i2=0;i2<numOfVec;i2++){
-            if(i1==i2){
-                V[i1][i2]=1;
-            }
-            else{
-                V[i1][i2]=0;
-            }
-        }
-    }
-
     /*creating A*/
     A = matrixAlloc(numOfVec, numOfVec);
     A3 = matrixAlloc(numOfVec, numOfVec);
@@ -110,7 +131,7 @@ char* Normalized_Spectral_Clustering(char* goal, int n,int dim, char* vectorsFil
 
     /*goal="lnorm"*/
     if(strcmp(goal,"lnorm")==0){
-        /*printMatrix(A,numOfVec,numOfVec);*/
+        printMatrix(A,numOfVec,numOfVec);
         freeFunc();
         return "";
     }
@@ -123,29 +144,6 @@ char* Normalized_Spectral_Clustering(char* goal, int n,int dim, char* vectorsFil
     copyOfV = matrixAlloc(numOfVec, numOfVec);
 
     Jacobi_algorithm(A,V,numOfVec);
-
-    /*Putting eigenvalues ​​in the array*/
-    if (eigenvalues == NULL) {
-        printAnErrorHasOccured();
-    }
-    for(i1=0;i1<numOfVec;++i1){
-        eigenvalues[i1]=A[i1][i1];
-    }
-
-    /*goal="jacobi"*/
-    if(strcmp(goal,"jacobi")==0){
-        for(i1=0;i1<numOfVec;++i1){
-            if(i1==numOfVec-1){
-                printf("%.4f\n", eigenvalues[i1]);
-            }
-            else{
-                printf("%.4f,", eigenvalues[i1]);
-            }
-        }
-        printMatrix(V,numOfVec,numOfVec);
-        freeFunc();
-        return "";
-    }
 
     /*creating a copy of eigenvalues and sorting it*/
     if (eigenvaluesCopy == NULL) {
@@ -221,7 +219,7 @@ void Jacobi_algorithm(double** A, double** V, int numOfVec){
     int i = 0;
     int j1 = 0;
     int j2 = 0;
-    convergence=1;
+    convergence=1.0;
     ep=0.00001;
     check=0;
     for(i=0;i<100;++i){
@@ -239,14 +237,25 @@ void Jacobi_algorithm(double** A, double** V, int numOfVec){
                 break;
             }
         }
-        if(convergence<=ep||check==0){
+        if(check==0){
             break;
         }
         convergence=J_A_step(A,V,numOfVec);
+        if(convergence<=ep){
+            break;
+        }
+        fflush(stdout);
+    }
+    /*Putting eigenvalues ​​in the array*/
+    if (eigenvalues == NULL) {
+        printAnErrorHasOccured();
+    }
+    for(i1=0;i1<numOfVec;++i1){
+        eigenvalues[i1]=A[i1][i1];
     }
 }
 
-/*A srep of Jacobi algorithm*/
+/*A step of Jacobi algorithm*/
 double J_A_step(double**A,double**V,int numOfVec){
     int x_of_max, y_of_max;
     double theta, t, c, s, sum1, sum2, result, max_elem; 
@@ -264,14 +273,14 @@ double J_A_step(double**A,double**V,int numOfVec){
     }
 
     /*Calculation of c and s*/
-    theta=(A[y_of_max][y_of_max]-A[x_of_max][x_of_max])/(2*A[x_of_max][y_of_max]);
+    theta=(A[y_of_max][y_of_max]-A[x_of_max][x_of_max])/(2.0*A[x_of_max][y_of_max]);
     if (theta<0){
-        t=-1.0/(fabs(theta)+sqrt(pow(theta,2)+1));
+        t=-1.0/(fabs(theta)+sqrt(pow(theta,2)+1.0));
     }
     else{
-        t=1.0/(fabs(theta)+sqrt(pow(theta,2)+1));
+        t=1.0/(fabs(theta)+sqrt(pow(theta,2)+1.0));
     }
-    c =1/sqrt(pow(t,2)+1);
+    c =1.0/sqrt(pow(t,2)+1.0);
     s=c*t;
 
     /*creat P the Rotation Matrix*/
@@ -282,7 +291,7 @@ double J_A_step(double**A,double**V,int numOfVec){
                     P[i1][i2]=c;
                 }
                 else{
-                    P[i1][i2]=1;
+                    P[i1][i2]=1.0;
                 }
             }
             else if (i1==x_of_max&&i2==y_of_max){
@@ -292,7 +301,7 @@ double J_A_step(double**A,double**V,int numOfVec){
                 P[i1][i2]=-s;
             }
             else{
-                P[i1][i2]=0;
+                P[i1][i2]=0.0;
             } 
         }
     }
@@ -333,7 +342,7 @@ double J_A_step(double**A,double**V,int numOfVec){
         }
     } 
 
-    /*creat V*/
+    /*creat a copy Of V*/
     for (i1=0;i1<numOfVec;++i1){
         for (i2=0;i2<numOfVec;++i2){
            copyOfV[i1][i2]=V[i1][i2]; 
@@ -417,7 +426,7 @@ void readInput(char *fileName, double **array)
         printInvalidInput();  
     }
     while (fscanf(fptr, "%lf%c", &coordinate, &comma) == 2) {
-        array[row][(col)++] = coordinate;
+        array[row][(col)++]+=coordinate;
         if (comma == '\n' || comma == '\r') {
             /*fscanf(fptr, "%c", &comma);*/
             row ++;
@@ -450,7 +459,7 @@ double** matrixAlloc(int rowNum, int colNum) {
             printAnErrorHasOccured();
         }
         for (i2=0; i2<colNum;i2++) {
-            p[i1][i2] = -1.0;
+            p[i1][i2] = 0.0;
         }
 
     }
@@ -469,7 +478,7 @@ double Distance(double* x, double* y,int dim) {
 void mult (double ** A, double **  B, double ** result, int size){
     for(i1=0;i1<size;++i1){
         for(i2=0;i2<size;++i2){
-            sum=0;
+            sum=0.0;
             for(i3=0;i3<size;++i3){
                 sum+=A[i1][i3]*B[i3][i2];
             }
@@ -532,7 +541,7 @@ void writeToFile(int firtLine, char* outFileName, int k, int dim, double** centr
 void freeFunc() {    
     free(eigenvalues);
     free(eigenvaluesCopy);
-    if ((stage >= 1) && (vectors != NULL)) {
+    if (((stage >= 1) || (stage==-1))&& (vectors != NULL)) {
         freeMatrix(vectors, numOfVec);
     }
     free(vectors);
@@ -544,7 +553,7 @@ void freeFunc() {
         freeMatrix(D, numOfVec);
     }
     free(D);
-    if ((stage >= 4) && (V != NULL)) {
+    if (((stage >= 4)|| (stage==-1)) && (V != NULL)) {
         freeMatrix(V, numOfVec);
     }
     free(V);
@@ -560,23 +569,23 @@ void freeFunc() {
         freeMatrix(A2, numOfVec);
     }
     free(A2);
-    if ((stage >= 8) && (P != NULL)) {
+    if (((stage >= 8)|| (stage==-1)) && (P != NULL)) {
         freeMatrix(P, numOfVec);
     }
     free(P);
-    if ((stage >= 9) && (P_T != NULL)) {
+    if (((stage >= 9)|| (stage==-1)) && (P_T != NULL)) {
         freeMatrix(P_T, numOfVec);
     }
     free(P_T);
-    if ((stage >= 10) && (A0 != NULL)) {
+    if (((stage >= 10)|| (stage==-1)) && (A0 != NULL)) {
         freeMatrix(A0, numOfVec);
     }
     free(A0);
-    if ((stage >= 11) && (A1 != NULL)) {
+    if (((stage >= 11)|| (stage==-1)) && (A1 != NULL)) {
         freeMatrix(A1, numOfVec);
     }
     free(A1);
-    if ((stage >= 12) && (copyOfV != NULL)) {
+    if (((stage >= 12)|| (stage==-1)) && (copyOfV != NULL)) {
         freeMatrix(copyOfV, numOfVec);
     }
     free(copyOfV);
@@ -587,10 +596,6 @@ void freeFunc() {
 }
 
 int main(){
-    Normalized_Spectral_Clustering("wam",100,10,"vectors.txt",0);
+    Normalized_Spectral_Clustering("lnorm",100,10,"vectors.txt",0);
     return 1;
 }
-
-
-
-
