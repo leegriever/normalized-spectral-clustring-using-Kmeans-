@@ -20,6 +20,8 @@ SPK_INFO* execute(int k, char *goal, char *filename){
     SPK_INFO *spk_info;
     INPUT_INFO *input_info;
     SPK_MATRIX *matrices;
+    /* TODO - init matrices (in initInputMatrices??) *********!!!!!!!!!!!!!!!!!!!!!!!!*******/
+
     /* init and allocate returned object to python */
     initSpkInfo(spk_info, k);
     /* init and allocate input's baic info */
@@ -28,7 +30,45 @@ SPK_INFO* execute(int k, char *goal, char *filename){
     if (input_info->curr_goal == jacobi){
         readMat()
     }
+    
+    /*
 
+    else if (spk){
+        if option == 'dd-emo'
+            do shira fuction
+        elif option = 'dd-emo2'
+            do shira2 function
+    }
+
+    */
+
+}
+
+void nullMatrix(int n, double ** p) {
+    int i;
+    for (i = 0; i < n; i++) {
+        p[i] = NULL;
+    }
+}
+
+double** matrixAlloc(int rowNum, int colNum) {
+    double **p = (double **)malloc(rowNum * sizeof(double*));
+    if (p == NULL) {
+        printAnErrorHasOccured();
+    }
+    nullMatrix(rowNum, p);
+    stage +=1;
+    for (i1=0;i1<rowNum;i1++) {
+        p[i1] = (double*)malloc(colNum*sizeof(double));
+        if (p[i1] == NULL){
+            printAnErrorHasOccured();
+        }
+        for (i2=0; i2<colNum;i2++) {
+            p[i1][i2] = 0.0;
+        }
+
+    }
+    return p;
 }
 
 void initSpkInfo(SPK_INFO *spk_info, int k){
