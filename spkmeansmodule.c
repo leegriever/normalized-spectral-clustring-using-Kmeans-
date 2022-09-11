@@ -7,20 +7,20 @@
 static PyObject* execute_program(PyObject *self, PyObject *args){
     int k;
     char *goal, *input_filename;
-    SPK_SETUP *spk_setup;
-    PyObject *result = PyList_New(2);
+    SPK_INFO *spk_info;
+    PyObject *res = PyList_New(2);
 
     if (!PyArg_ParseTuple(args, "iss", &k, &goal, &input_filename)){
         return NULL;
     }
-    /* calling workfloe in c*/
-    spk_setup = process(k, goal, input_filename);
+    /* execute c program */
+    spk_info = execute(k, goal, input_filename);
 
-    /*Create the result list containing k, T_filename*/
-    PyList_SetItem(result, 0, Py_BuildValue("i", spk_setup->k));
-    PyList_SetItem(result, 1, Py_BuildValue("s", spk_setup->T_filename));
-    free(spk_setup);
-    return result;
+    /* Create the result structure */
+    PyList_SetItem(res, 0, Py_BuildValue("i", spk_info->k));
+    PyList_SetItem(res, 1, Py_BuildValue("s", spk_info->spk_mat_filename));
+    free(spk_info);
+    return res;
 
 }
 
