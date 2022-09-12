@@ -6,7 +6,6 @@
 #include <math.h>
 #include <float.h>
 
-/* methods */
 
 
 /* structs */
@@ -56,3 +55,6 @@ typedef struct eigen_info
     double EG;
     double * EV;
 } EIGEN_INFO;
+
+/* methods */
+SPK_INFO* execute(int k, char *goal, char *filename);

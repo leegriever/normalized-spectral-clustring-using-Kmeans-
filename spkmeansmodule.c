@@ -2,6 +2,7 @@
 #include <Python.h>
 #include "spkmeans.h"
 
+
 static PyObject* execute_program(PyObject *self, PyObject *args){
     int k;
     char *goal, *input_filename;
@@ -29,22 +30,29 @@ static PyObject* execute_program(PyObject *self, PyObject *args){
 //     if (!PyArg_ParseTuple(args, "iiiss", &k, &n, &d, &datapoints_filename, &centroids_filename)){
 //         return NULL;
 //     }
-//     return Py_BuildValue("s", kmeans_process(k, n, d, datapoints_filename, centroids_filename));
+//     return Py_BuildValue("s", "delete this");
 // }
-
 
 static PyMethodDef capiMethods[] = {
     {"execute_program",
     (PyCFunction) execute_program,
     METH_VARARGS,
     PyDoc_STR("Normalized Spectral Clustering Algorithm")},
-    {"execute_kmeans",
-    (PyCFunction) execute_kmeans,
-    METH_VARARGS,
-    PyDoc_STR("Kmeans Algorithm")},
     {NULL, NULL, 0, NULL}
     
 };
+// static PyMethodDef capiMethods[] = {
+//     {"execute_program",
+//     (PyCFunction) execute_program,
+//     METH_VARARGS,
+//     PyDoc_STR("Normalized Spectral Clustering Algorithm")},
+//     {"execute_kmeans",
+//     (PyCFunction) execute_kmeans,
+//     METH_VARARGS,
+//     PyDoc_STR("Kmeans Algorithm")},
+//     {NULL, NULL, 0, NULL}
+    
+// };
 
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,

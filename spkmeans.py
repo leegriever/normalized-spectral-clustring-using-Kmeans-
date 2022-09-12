@@ -22,13 +22,15 @@ def main():
     input_filename = args[3]
     
     k, output_filename = spkmm.execute_program(k, goal, input_filename)
+    print(k)
+    print(output_filename)
     
-#     if goal == "spk":
-#         executeStage6(k, output_filename)
-#         vectors = pd.read_csv(input_filename, header = None)
-# def executeStage6(k, filename):
-#     if filename == None: 
-#         printanErrorHasOccurred()
+    if goal == "spk":
+        executeStage6(k, output_filename)
+        vectors = pd.read_csv(input_filename, header = None)
+def executeStage6(k, filename):
+    if filename == None: 
+        printanErrorHasOccurred()
 
 
 def printInvalidInput():

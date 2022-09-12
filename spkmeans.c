@@ -21,20 +21,24 @@ void freeMatrix(double** matrix, int rowNum);
 void freefunc(int stage);
 void freeE_lst();
 void freeMatrices();
+void printMat(double** A, int numOfRows, int numOfcolumns);
 
-SPK_INFO* execute(int k, char *goal, char *filename);
 SPK_INFO *spk_info;
 INPUT_INFO *input_info;
 SPK_MATRIX *matrices;
 EIGEN_INFO ** E_lst;
 
 /* in case user is caliing spkmeans.c */
-int main(int argc, char *argv[]) {
+
+int main() {
     char *goal, *filename;
-    if (argc != 3)
-        printInvalidInput(0);
-    goal = argv[1];
-    filename = argv[2];
+    /* if (argc != 3)
+         printInvalidInput(0);
+     goal = argv[1];
+     filename = argv[2]; */
+    goal = "wam";
+    filename = "input_1.txt";
+    printf("1");
     spk_info = execute(0, goal, filename);
     free(spk_info);
     return 0;
@@ -44,11 +48,16 @@ int main(int argc, char *argv[]) {
 SPK_INFO* execute(int k, char *goal, char *filename){
     /* init and allocate returned object to python */
     initSpkInfo();
+    spk_info->spk_mat_filename = "input_1.txt";
+    return spk_info;
+    printf("2");
     /* init and allocate input's baic info */
     initInputInfo(k, goal, filename);
+    printf("3");
     /* check validity for both c and python callings */
     inputValidity(input_info->k, input_info->n, input_info->d, goal);
     initMatrices();
+    printf("4");
     initEigenList();
 
     /* readMat, check about reading from file diffrence for j and others */
@@ -63,6 +72,10 @@ SPK_INFO* execute(int k, char *goal, char *filename){
         readInput(input_info->input_filename, matrices->X);
         /* step 1 in algorithm: buils weighted adjacency matrix*/ 
         create_W();
+        if (input_info-> curr_goal == wam){
+            printMat(matrices->W, input_info->n, input_info->n);
+            freefunc(3);
+        }
     }
     
     /*
@@ -78,6 +91,20 @@ SPK_INFO* execute(int k, char *goal, char *filename){
    return spk_info;
 
 }
+void printMat(double** A, int numOfRows, int numOfcolumns){
+    int i, j;
+        for (i = 0; i < numOfRows; i++) {
+            for (j = 0; j < numOfcolumns; j++) {
+                if (j != (numOfcolumns - 1)) {
+                    printf("%.4f,", A[i][j]);
+                } 
+                else {
+                    printf("%.4f\n", A[i][j]);
+                }
+            }
+        }
+}
+
 
 void initMat(double *** p, int rows, int cols) {
     int i;
@@ -96,6 +123,7 @@ void initMat(double *** p, int rows, int cols) {
     }
 }
 void initMatrices(){
+    matrices = (SPK_MATRIX*) malloc(sizeof(SPK_MATRIX));
     initMat(&(matrices->X), input_info->n, input_info->d);
     initMat(&(matrices->W), input_info->n, input_info->n);
     initMat(&(matrices->D), input_info->n, input_info->n);
@@ -111,6 +139,7 @@ void initSpkInfo(){
     spk_info->spk_mat_filename = NULL;
 }
 void initInputInfo(int k, char *goal, char *filename){
+    input_info = (INPUT_INFO*) malloc(sizeof(INPUT_INFO));
     input_info->k = k;
     input_info->n = calcNumOfVec(filename);
     input_info->input_filename = filename;
