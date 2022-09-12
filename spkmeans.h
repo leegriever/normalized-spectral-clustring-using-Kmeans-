@@ -7,11 +7,7 @@
 #include <float.h>
 
 /* methods */
-SPK_INFO* normalizedSpectralClustering(int k, char *goal, char *filename);
-void initInputInfo(INPUT_INFO *input_info, int k, char *goal, char *filename);
-void input_validity(int argc, char *argv[]);
-void printInvalidInput();
-void printAnErrorHasOccured();
+
 
 /* structs */
 typedef struct spk_info
@@ -39,21 +35,24 @@ typedef struct spk_matrix
     /* miagonal degree matrix */
     double ** D;
     /* D**(-0.5) */
-    double ** norm_D;
+    double ** D_norm;
     /* identity matrix */
-    double ** identity_matrix;
+    double ** I;
     /* The Normalized Graph Laplacian */
-    double ** L_norm;
+    double ** l_norm;
     /* matrix containing the k eigen vectors of L_norm as columns */
     double ** U;
-    /* a structure of EIGEN items containing eigen value and corresponding eigen vector each */
-    EIGEN ** eigenList;
     /* normalized U */
     double ** T;
     /*matrix of eigenvector as columns*/
     double ** V;
     /* cosen goal within enclosed options */
-    enum goal {
-        wam, ddg, lnorm, jacobi, spk
-    } chosen_goal;
+    
 } SPK_MATRIX;
+
+    
+typedef struct eigen_info
+{
+    double EG;
+    double * EV;
+} EIGEN_INFO;

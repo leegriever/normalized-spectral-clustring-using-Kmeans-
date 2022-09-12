@@ -1,4 +1,3 @@
-from fileinput import filename
 import os
 import sys
 import math
@@ -15,17 +14,21 @@ def main():
     args = sys.argv
     if len(args) != 4:
         printInvalidInput()
+    try:
+        k = int(args[1])
+    except:
+        printInvalidInput()
     goal = args[2]
     input_filename = args[3]
     
     k, output_filename = spkmm.execute_program(k, goal, input_filename)
     
-    if goal == "spk":
-        executeStage6(k, output_filename)
-        vectors = pd.read_csv(filename, header = None)
-def executeStage6(k, filename):
-    if filename == None: 
-        printanErrorHasOccurred()
+#     if goal == "spk":
+#         executeStage6(k, output_filename)
+#         vectors = pd.read_csv(input_filename, header = None)
+# def executeStage6(k, filename):
+#     if filename == None: 
+#         printanErrorHasOccurred()
 
 
 def printInvalidInput():
@@ -35,7 +38,7 @@ def printInvalidInput():
 def printanErrorHasOccurred():
     print("An Error Has Occurred")
     # TODO: remove files created using:
-    # os.remove("")
+    os.remove("output_filename")
     sys.exit(1)
 
 

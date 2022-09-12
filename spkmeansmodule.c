@@ -1,7 +1,5 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include "utils.h"
-#include "kmeans.h"
 #include "spkmeans.h"
 
 static PyObject* execute_program(PyObject *self, PyObject *args){
@@ -24,15 +22,15 @@ static PyObject* execute_program(PyObject *self, PyObject *args){
 
 }
 
-static PyObject* execute_kmeans(PyObject *self, PyObject *args){
-    int k, n, d;
-    char * datapoints_filename;
-    char * centroids_filename;
-    if (!PyArg_ParseTuple(args, "iiiss", &k, &n, &d, &datapoints_filename, &centroids_filename)){
-        return NULL;
-    }
-    return Py_BuildValue("s", kmeans_process(k, n, d, datapoints_filename, centroids_filename));
-}
+// static PyObject* execute_kmeans(PyObject *self, PyObject *args){
+//     int k, n, d;
+//     char * datapoints_filename;
+//     char * centroids_filename;
+//     if (!PyArg_ParseTuple(args, "iiiss", &k, &n, &d, &datapoints_filename, &centroids_filename)){
+//         return NULL;
+//     }
+//     return Py_BuildValue("s", kmeans_process(k, n, d, datapoints_filename, centroids_filename));
+// }
 
 
 static PyMethodDef capiMethods[] = {

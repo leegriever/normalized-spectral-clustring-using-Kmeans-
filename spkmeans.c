@@ -1,12 +1,38 @@
 #include "spkmeans.h"
 
+/* methods */
+
+void initMat(double *** p, int rows, int cols);
+void initMatrices();
+void initSpkInfo();
+void initInputInfo(int k, char *goal, char *filename);
+void initEigenList();
+void initiateGoal(INPUT_INFO *input_info, char *goal);
+void createIdentityMat();
+void inputValidity(int k, int n, int d, char *goal);
+void printInvalidInput(int stage);
+void printAnErrorHasOccured(int stage);
+int calcNumOfVec(char *filename);
+int calcDim(char *filename);
+void readInput(char *fileName, double **m);
+void create_W();
+double Distance(double* x, double* y,int dim);
+void freeMatrix(double** matrix, int rowNum);
+void freefunc(int stage);
+void freeE_lst();
+void freeMatrices();
+
+SPK_INFO* execute(int k, char *goal, char *filename);
+SPK_INFO *spk_info;
+INPUT_INFO *input_info;
+SPK_MATRIX *matrices;
+EIGEN_INFO ** E_lst;
+
 /* in case user is caliing spkmeans.c */
 int main(int argc, char *argv[]) {
     char *goal, *filename;
-    SPK_INFO *spk_info;
     if (argc != 3)
-        printInvalidInput();
-    
+        printInvalidInput(0);
     goal = argv[1];
     filename = argv[2];
     spk_info = execute(0, goal, filename);
@@ -16,19 +42,27 @@ int main(int argc, char *argv[]) {
 
 /* conduct NSC algorithm and division to goals */
 SPK_INFO* execute(int k, char *goal, char *filename){
-    input_validity(k, goal);
-    SPK_INFO *spk_info;
-    INPUT_INFO *input_info;
-    SPK_MATRIX *matrices;
-    /* TODO - init matrices (in initInputMatrices??) *********!!!!!!!!!!!!!!!!!!!!!!!!*******/
-
     /* init and allocate returned object to python */
-    initSpkInfo(spk_info, k);
+    initSpkInfo();
     /* init and allocate input's baic info */
-    initInputInfo(input_info, k, goal, filename);
+    initInputInfo(k, goal, filename);
+    /* check validity for both c and python callings */
+    inputValidity(input_info->k, input_info->n, input_info->d, goal);
+    initMatrices();
+    initEigenList();
+
+    /* readMat, check about reading from file diffrence for j and others */
     /* goal is jacobi */
+    
     if (input_info->curr_goal == jacobi){
-        readMat()
+        /* whhhhy is it l_norm */
+        /* complete jacobi stuff */
+        readInput(input_info->input_filename, matrices->l_norm);
+    }
+    else{
+        readInput(input_info->input_filename, matrices->X);
+        /* step 1 in algorithm: buils weighted adjacency matrix*/ 
+        create_W();
     }
     
     /*
@@ -41,42 +75,42 @@ SPK_INFO* execute(int k, char *goal, char *filename){
     }
 
     */
+   return spk_info;
 
 }
 
-void nullMatrix(int n, double ** p) {
+void initMat(double *** p, int rows, int cols) {
     int i;
-    for (i = 0; i < n; i++) {
-        p[i] = NULL;
+    double ** m;
+    *(p) = (double**) malloc(rows * sizeof(double*));
+    m = *(p);
+    if (m == NULL) {
+        printAnErrorHasOccured(2);
+    } else {
+        for (i = 0; i < rows; i++) {
+            m[i] = (double*) malloc(cols * sizeof(double));
+            if (m[i] == NULL) {
+                printAnErrorHasOccured(2);
+            }
+        }
     }
 }
-
-double** matrixAlloc(int rowNum, int colNum) {
-    double **p = (double **)malloc(rowNum * sizeof(double*));
-    if (p == NULL) {
-        printAnErrorHasOccured();
-    }
-    nullMatrix(rowNum, p);
-    stage +=1;
-    for (i1=0;i1<rowNum;i1++) {
-        p[i1] = (double*)malloc(colNum*sizeof(double));
-        if (p[i1] == NULL){
-            printAnErrorHasOccured();
-        }
-        for (i2=0; i2<colNum;i2++) {
-            p[i1][i2] = 0.0;
-        }
-
-    }
-    return p;
+void initMatrices(){
+    initMat(&(matrices->X), input_info->n, input_info->d);
+    initMat(&(matrices->W), input_info->n, input_info->n);
+    initMat(&(matrices->D), input_info->n, input_info->n);
+    initMat(&(matrices->D_norm), input_info->n, input_info->n);
+    initMat(&(matrices->I), input_info->n, input_info->n);
+    createIdentityMat();
+    initMat(&(matrices->l_norm), input_info->n, input_info->n);
+    initMat(&(matrices->V), input_info->n, input_info->n);
 }
-
-void initSpkInfo(SPK_INFO *spk_info, int k){
+void initSpkInfo(){
     spk_info = (SPK_INFO*) malloc(sizeof(SPK_INFO));
     spk_info->k = 0;
     spk_info->spk_mat_filename = NULL;
 }
-void initInputInfo(INPUT_INFO *input_info, int k, char *goal, char *filename){
+void initInputInfo(int k, char *goal, char *filename){
     input_info->k = k;
     input_info->n = calcNumOfVec(filename);
     input_info->input_filename = filename;
@@ -85,11 +119,21 @@ void initInputInfo(INPUT_INFO *input_info, int k, char *goal, char *filename){
         input_info->d = input_info->n;
     else
         input_info->d = calcDim(filename);
-    if (input_info->d <= 0 || input_info->n <= 0)
-        printInvalidInput();
+    
 }
-void initMatrices(input_info){
-
+void initEigenList(){
+    int i;
+    int size; 
+    E_lst = (EIGEN_INFO**) malloc(sizeof(EIGEN_INFO)*input_info->n);
+    if (E_lst == NULL)
+        printAnErrorHasOccured(3);
+    for (i = 0; i < input_info->n; i++) {
+        E_lst[i] = (EIGEN_INFO*) malloc(sizeof(EIGEN_INFO));
+        if (E_lst == NULL)
+            printAnErrorHasOccured(3);
+        size = sizeof(double) * input_info->n;
+		E_lst[i]->EV = (double *) malloc(size);
+    }
 }
 
 void initiateGoal(INPUT_INFO *input_info, char *goal){
@@ -104,54 +148,30 @@ void initiateGoal(INPUT_INFO *input_info, char *goal){
     } else if (strcmp(goal, "jacobi") == 0) {
         input_info->curr_goal = jacobi;
     } else {
-        invalidInput();
+        printInvalidInput(1);
     }
 }
-
-void readMat(char *fileName, double **array)
-{
-    double coordinate;
-    char comma;
-    FILE *fptr;
-    int row = 0, col = 0;
-    array[0][0] = 0;
-    if (!(fptr = fopen(fileName, "r"))) {
-        printInvalidInput();  
-    }
-    while (fscanf(fptr, "%lf%c", &coordinate, &comma) == 2) {
-        array[row][(col)++]+=coordinate;
-        if (comma == '\n' || comma == '\r') {
-            /*fscanf(fptr, "%c", &comma);*/
-            row ++;
-            col = 0;
-        }
-        else if (comma != ',') {
-            printAnErrorHasOccured(); 
-        }
-    }
-    fclose(fptr);
-}
-
-
 
 
 /* complete!!!!!*/
-void inputValidity(int k, char *goal) {
-   if (((strcmp(goal, "wam") != 0) && (strcmp(goal, "ddg") != 0) &&
+void inputValidity(int k, int n, int d, char *goal) {
+    if (d <= 0 || n <= 0 || k < 0 || k > n)
+        printInvalidInput(1);
+    if (((strcmp(goal, "wam") != 0) && (strcmp(goal, "ddg") != 0) &&
     (strcmp(goal, "lnorm") != 0) && (strcmp(goal, "jacobi") != 0))) {
-        printInvalidInput();
+        printInvalidInput(1);
     }
     
 }
 /* note: correct free of both error functions */
-void printInvalidInput() {
-    freeFunc();
+void printInvalidInput(int stage) {
+    freefunc(stage);
     printf("Invalid Input!\n");
     exit(1);
 }
 
-void printAnErrorHasOccured() {
-    freeFunc();
+void printAnErrorHasOccured(int stage) {
+    freefunc(stage);
     printf("An Error Has Occurred\n");
     exit(1);
 }
@@ -186,4 +206,130 @@ int calcDim(char *filename) {
         printAnErrorHasOccured(0);
     }
     return (commasCount + 1);
+}
+
+void readInput(char *fileName, double **m)
+{
+    double coordinate;
+    char comma;
+    FILE *fptr;
+    int row = 0, col = 0;
+    m[0][0] = 0;
+    if (!(fptr = fopen(fileName, "r"))) {
+        printInvalidInput(3);  
+    }
+    while (fscanf(fptr, "%lf%c", &coordinate, &comma) == 2) {
+        m[row][(col)++]+=coordinate;
+        if (comma == '\n' || comma == '\r') {
+            /*fscanf(fptr, "%c", &comma);*/
+            row ++;
+            col = 0;
+        }
+        else if (comma != ',') {
+            printAnErrorHasOccured(3); 
+        }
+    }
+    fclose(fptr);
+}
+
+/* all matrices creation funcs */
+
+void createIdentityMat() {
+    int i, j;
+    for(i = 0; i < input_info->n; i++){
+        for(j = 0; j < input_info->n; j++){
+            if (i != j)
+                matrices->I[i][j] = 0;
+            else
+                matrices->I[i][j] = 1;
+        }
+    }
+}
+/* Create The Weighted Adjacency Matrix = W */
+void create_W() {
+    int i, j;
+    for (i = 0 ; i < input_info->n ; ++i){
+        for (j = 0 ; j < input_info->n ; ++j){
+            if (i != j) {
+                matrices->W[i][j] = exp((-sqrt(Distance(matrices->X[i],matrices->X[j],input_info->d))/2));
+            }
+            else{
+                matrices->W[i][j] = 0;
+            }
+        }
+    }
+}
+
+
+
+/* all free related funcs */
+
+void freefunc(int stage){
+    /* only info_input and spk_info are aloocated */ 
+    if (stage == 1){
+        free(input_info);
+        free(spk_info);
+    }
+    /* info_input, spk_info and matrices are allocated */ 
+    if (stage == 2){
+        free(input_info);
+        free(spk_info);
+        freeMatrices();
+    }
+    if (stage == 3){
+        free(input_info);
+        free(spk_info);
+        freeMatrices();
+        freeE_lst();
+    }
+}
+void freeE_lst(){
+    if (E_lst != NULL){
+        int i;
+        for (i = 0; i < input_info->n; i++) {
+            if(E_lst[i]->EV != NULL)
+                free(E_lst[i]->EV);
+            free(E_lst);
+        }
+    }
+    free(E_lst);
+}
+void freeMatrices(){
+    if (matrices->X != NULL)
+        freeMatrix(matrices->X, input_info->n);    
+    free (matrices->X);
+    if (matrices->W != NULL)
+        freeMatrix(matrices->W, input_info->n);    
+    free(matrices->W);
+    if (matrices->D != NULL)
+        freeMatrix(matrices->D, input_info->n);   
+    free(matrices->D);
+    if (matrices->D_norm != NULL)
+        freeMatrix(matrices->D_norm, input_info->n);   
+    free(matrices->D_norm);
+    if (matrices->I != NULL)
+        freeMatrix(matrices->I, input_info->n); 
+    free(matrices->I);
+    if(matrices->l_norm != NULL)
+        freeMatrix(matrices->l_norm, input_info->n);   
+    free(matrices->l_norm);
+    if (matrices->V != NULL)
+        freeMatrix(matrices->V, input_info->n);  
+    free(matrices->V);
+}
+
+void freeMatrix(double** matrix, int rowNum) {
+    int i;
+    for (i = 0; i < rowNum; i++) {
+        free(matrix[i]);
+    }
+}
+
+/* utility methods */
+double Distance(double* x, double* y,int dim) {
+    double sumOfSquaredDiffrence = 0;
+    int i;
+    for (i=0; i < dim; ++i){
+        sumOfSquaredDiffrence += pow(x[i]-y[i],2);}
+    return sumOfSquaredDiffrence;
 }
