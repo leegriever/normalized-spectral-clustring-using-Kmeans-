@@ -5,8 +5,16 @@
 #include <ctype.h>
 #include <string.h>
 
+/* struct */
+typedef struct spk_info
+{
+    int k;
+    char * spk_mat_filename;
+
+} SPK_INFO;
+
 /* define main methods */
-char* Normalized_Spectral_Clustering(char* goal, int n,int dim, char* vectorsFile, int k);
+SPK_INFO* execute1(int kToCheck, char *goal, char *filename);
 void creat_W(double ** W, double **vectors, int numOfVec, int dim);
 void creat_D(double ** D, double **  W, int numOfVec);
 void creat_A(double ** L, double ** D, double **  W, double ** I, int numOfVec);
@@ -15,8 +23,11 @@ double J_A_step(double**L,double**V,int numOfVec);
 void creat_T(double** T, double* eigenvaluesCopy, double* eigenvalues, int k, int numOfVec);
 int find_k (double* eigenvaluesCopy, int numOfVec);
 void freeFunc();
+void initSpkInfo();
+void inputValidity(int k, int n, int d, char *goal);
 
 /* define auxiliary methods */
+void find_numOfVec_and_dim(char *fileName);
 void readInput(char *fileName, double **array);
 void nullMatrix(int n, double ** p);
 double** matrixAlloc(int rowNum, int colNum);
@@ -27,14 +38,12 @@ void printMatrix(double** A, int numOfRows, int numOfcolumns);
 void printAnErrorHasOccured();
 void printInvalidInput();
 int compare_double(const void *p1, const void *p2);
-void writeToFile(int firtLine, char* outFileName, int k, int dim, double** centroids);
+void writeToFile(char* outFileName, int k, int dim, double** centroids);
 
 /* define variables */
-int numOfVec, i1, i2, i3, k;
+int numOfVec, i1, i2, i3, k, row, col, dim;
 double sum; 
 int check = 0;
-double ep=0.00001;
-double convergence=1;
 int stage = 0;
 double **vectors = NULL;
 double **W = NULL;
@@ -51,15 +60,30 @@ double **P_T = NULL;
 double **T = NULL;
 double *eigenvaluesCopy = NULL;
 double *eigenvalues = NULL;
+SPK_INFO *spk_info;
 
 /*The Normalized Spectral Clustering Algorithm*/
-char* Normalized_Spectral_Clustering(char* goal, int n,int dim, char* vectorsFile, int kToCheck) {
-    
-    numOfVec = n;
-    eigenvalues = (double*)malloc(sizeof(double)*n);
-    eigenvaluesCopy = (double*)malloc(sizeof(double)*n);
+SPK_INFO* execute1(int kToCheck, char *goal, char *filename){
+
+    /*read input*/
+    find_numOfVec_and_dim(filename);
     vectors = matrixAlloc(numOfVec, dim);
-    readInput(vectorsFile ,vectors);
+    readInput(filename ,vectors);
+
+    /*creating objects for later use*/
+    initSpkInfo();
+    eigenvalues = (double*)malloc(sizeof(double)*numOfVec);
+    if (eigenvalues == NULL) {
+        stage=-2;
+        printAnErrorHasOccured();
+    }
+    eigenvaluesCopy = (double*)malloc(sizeof(double)*numOfVec);
+    if (eigenvaluesCopy == NULL) {
+        printAnErrorHasOccured();
+    }
+
+    /*checking the input validity*/
+    inputValidity(kToCheck, numOfVec, dim, goal);
 
     /*creat the Identity matrix */
     V =  matrixAlloc(numOfVec, numOfVec);
@@ -93,7 +117,7 @@ char* Normalized_Spectral_Clustering(char* goal, int n,int dim, char* vectorsFil
         printMatrix(V,numOfVec,numOfVec);
         stage=-1;
         freeFunc();
-        return "";
+        return spk_info;
     }
 
     /*creating W*/
@@ -102,9 +126,10 @@ char* Normalized_Spectral_Clustering(char* goal, int n,int dim, char* vectorsFil
 
     /*goal="wam"*/
     if(strcmp(goal,"wam")==0){
+        printf("%i",stage);
         printMatrix(W,numOfVec,numOfVec);
         freeFunc();
-        return "";
+        return spk_info;
     }
 
     /*creating D*/
@@ -115,7 +140,7 @@ char* Normalized_Spectral_Clustering(char* goal, int n,int dim, char* vectorsFil
     if(strcmp(goal,"ddg")==0){
         printMatrix(D,numOfVec,numOfVec);
         freeFunc();
-        return "";
+        return spk_info;
     }
 
     /*creating 1/D^0.5*/
@@ -133,7 +158,7 @@ char* Normalized_Spectral_Clustering(char* goal, int n,int dim, char* vectorsFil
     if(strcmp(goal,"lnorm")==0){
         printMatrix(A,numOfVec,numOfVec);
         freeFunc();
-        return "";
+        return spk_info;
     }
 
     /* Jacobi algorithm*/
@@ -146,9 +171,6 @@ char* Normalized_Spectral_Clustering(char* goal, int n,int dim, char* vectorsFil
     Jacobi_algorithm(A,V,numOfVec);
 
     /*creating a copy of eigenvalues and sorting it*/
-    if (eigenvaluesCopy == NULL) {
-        printAnErrorHasOccured();
-    }
     for(i1=0;i1<numOfVec;++i1){
         eigenvaluesCopy[i1]=eigenvalues[i1];
     }
@@ -166,11 +188,13 @@ char* Normalized_Spectral_Clustering(char* goal, int n,int dim, char* vectorsFil
     T = matrixAlloc(numOfVec, k);
     creat_T(T, eigenvaluesCopy, eigenvalues, k, numOfVec);
     
-    writeToFile(k, "C_outFile.txt", numOfVec, k, T);
+    writeToFile("C_outFile.txt", numOfVec, k, T);
 
     freeFunc();
+    
+    spk_info->k=k;
 
-    return"C_outFile.txt";
+    return spk_info;
 }
 
 /* Creat The Weighted Adjacency Matrix = W */
@@ -219,10 +243,12 @@ void Jacobi_algorithm(double** A, double** V, int numOfVec){
     int i = 0;
     int j1 = 0;
     int j2 = 0;
-    convergence=1.0;
-    ep=0.00001;
-    check=0;
-    for(i=0;i<100;++i){
+    double ep=0.00001;
+    double convergence=1.0;
+    check=1;
+    while(convergence>ep && check==1 && i<100){
+        if(convergence>ep){
+        }
         check=0;
         for (j1=0 ; j1<numOfVec;j1++){
             for (j2=0 ; j2<numOfVec;j2++){
@@ -240,16 +266,14 @@ void Jacobi_algorithm(double** A, double** V, int numOfVec){
         if(check==0){
             break;
         }
-        convergence=J_A_step(A,V,numOfVec);
-        if(convergence<=ep){
+        else if(convergence<=ep){
             break;
         }
+        convergence=J_A_step(A,V,numOfVec);
+        ++i;
         fflush(stdout);
     }
     /*Putting eigenvalues ​​in the array*/
-    if (eigenvalues == NULL) {
-        printAnErrorHasOccured();
-    }
     for(i1=0;i1<numOfVec;++i1){
         eigenvalues[i1]=A[i1][i1];
     }
@@ -415,18 +439,41 @@ void printInvalidInput() {
     exit(1);
 }
 
+void find_numOfVec_and_dim(char *fileName){
+    FILE *fptr;
+    double coordinate;
+    char comma;
+    if (!(fptr = fopen(fileName, "r"))) {
+        printInvalidInput();  
+    }
+    while (fscanf(fptr, "%lf%c", &coordinate, &comma) == 2) {
+        col++;
+        if (comma == '\n' || comma == '\r') {
+            row ++;
+            col=0;
+        }
+        if(col+1>dim){
+            dim=col+1;
+        }
+    }
+    numOfVec=row;
+    fclose(fptr);
+
+}
+
 void readInput(char *fileName, double **array)
 {
     double coordinate;
     char comma;
     FILE *fptr;
-    int row = 0, col = 0;
+    row = 0;
+    col = 0;
     array[0][0] = 0;
     if (!(fptr = fopen(fileName, "r"))) {
         printInvalidInput();  
     }
     while (fscanf(fptr, "%lf%c", &coordinate, &comma) == 2) {
-        array[row][(col)++]+=coordinate;
+        array[row][(col)++]=coordinate;
         if (comma == '\n' || comma == '\r') {
             /*fscanf(fptr, "%c", &comma);*/
             row ++;
@@ -436,7 +483,9 @@ void readInput(char *fileName, double **array)
             printAnErrorHasOccured(); 
         }
     }
-    fclose(fptr);
+    if (fclose(fptr) == EOF) {
+        printAnErrorHasOccured();
+    }
 }
 
 void nullMatrix(int n, double ** p) {
@@ -519,10 +568,8 @@ int compare_double(const void *p1, const void *p2){
     return 0;
 }
 
-void writeToFile(int firtLine, char* outFileName, int k, int dim, double** centroids){
+void writeToFile(char* outFileName, int k, int dim, double** centroids){
     FILE* outFile = fopen(outFileName, "w");
-    if(firtLine!=0){
-        fprintf(outFile, "%i\n", firtLine);}
     for (i1 = 0; i1 < k; i1++) {
         for (i2 = 0; i2 < dim; i2++) {
             if (i2 != (dim - 1)) {
@@ -540,7 +587,9 @@ void writeToFile(int firtLine, char* outFileName, int k, int dim, double** centr
 
 void freeFunc() {    
     free(eigenvalues);
-    free(eigenvaluesCopy);
+    if(stage!=-2){
+        free(eigenvaluesCopy);
+    }
     if (((stage >= 1) || (stage==-1))&& (vectors != NULL)) {
         freeMatrix(vectors, numOfVec);
     }
@@ -595,7 +644,44 @@ void freeFunc() {
     free(T);
 }
 
-int main(){
-    Normalized_Spectral_Clustering("lnorm",100,10,"vectors.txt",0);
+void initSpkInfo(){
+    spk_info = (SPK_INFO*) malloc(sizeof(SPK_INFO));
+    if (spk_info == NULL) {
+        printf("An Error Has Occured\n");
+        exit(1);
+    }
+    spk_info->k = 555;
+    spk_info->spk_mat_filename = NULL;
+}
+
+ void inputValidity(int k, int n, int d, char *goal) {
+    if (d <= 0 || n <= 0 || ( (strcmp(goal, "spk") != 0) && (k < 0 || k > n))){
+        printInvalidInput();
+    }
+    if (((strcmp(goal, "wam") != 0) && (strcmp(goal, "ddg") != 0) &&
+    (strcmp(goal, "lnorm") != 0) && (strcmp(goal, "jacobi") != 0) &&
+    (strcmp(goal, "spk") != 0))) {
+        printInvalidInput();
+    }
+}
+
+int main(int argc, char *argv[]){
+    char* goal;
+    if(argc!=3){
+        printf("Invalid Input!\n");
+        exit(1);
+    }
+    goal=argv[1];
+    if (((strcmp(goal, "wam") != 0) && (strcmp(goal, "ddg") != 0) &&
+    (strcmp(goal, "lnorm") != 0) && (strcmp(goal, "jacobi") != 0))) {
+        printf("Invalid Input!\n");
+        exit(1);
+    }
+    execute1(0,goal,argv[2]);
+    free(spk_info);
     return 1;
 }
+
+
+
+
