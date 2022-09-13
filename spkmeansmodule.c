@@ -1,7 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include "spkmeans.h"
-#include "kmeans.c"
+#include "kmeans.h"
 
 
 static PyObject* execute_program(PyObject *self, PyObject *args){

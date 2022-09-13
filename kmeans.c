@@ -6,7 +6,6 @@
 #include <float.h> 
 #include <ctype.h>
 
-char* execute2();
 
 char* execute2(){
     printf("3- arrived from python to c for kmeans");
