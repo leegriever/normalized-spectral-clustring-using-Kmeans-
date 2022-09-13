@@ -34,7 +34,12 @@ double **centroids = NULL;
 double** clusters = NULL;
 double *old_centroid = NULL;
 char* outputFileName = "outputFileName";
+char* execute2();
 
+char* execute2(){
+    printf("3- arrived from python to c for kmeans");
+    return "hi!";
+}
 /*For successful running return 0 otherwise 1*/
 static char* fit_c(int k_new, int n,int dim, int max_iter, double eps, char* vectorsFile, char* centroidsFile) {
     int i;
@@ -255,43 +260,4 @@ void freeMatrix(double** matrix, int rowNum) {
     }
 }
 
-
-static PyObject* fit_capi(PyObject *self, PyObject *args){
-    int k, max_iter, n, dim;
-    double eps;
-    char* vectorsFile;
-    char* centroidsFile;
-    if (!PyArg_ParseTuple(args, "iiiidss", &k, &n, &dim, &max_iter, &eps, &vectorsFile, &centroidsFile)){
-        return NULL;
-    }
-    return Py_BuildValue("s", fit_c(k, n, dim, max_iter, eps, vectorsFile, centroidsFile));
-}
-
-static PyMethodDef capiMethos[] = {
-    {"fit",
-    (PyCFunction) fit_capi,
-    METH_VARARGS,
-    PyDoc_STR("a function to calc kmeans")},
-    {NULL, NULL, 0, NULL}
-    
-};
-
-
-static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "mykmeanssp",
-    NULL,
-    -1,
-    capiMethos
-};
-
-PyMODINIT_FUNC PyInit_mykmeanssp(void)
-{
-    PyObject *m;
-    m = PyModule_Create(&moduledef);
-    if (!m){
-        return NULL;
-    }
-    return m;
-}
 

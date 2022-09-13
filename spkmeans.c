@@ -39,16 +39,17 @@ int main() {
     goal = "wam";
     filename = "input_1.txt";
     printf("1");
-    spk_info = execute(0, goal, filename);
+    spk_info = execute1(0, goal, filename);
     free(spk_info);
     return 0;
 }
 
 /* conduct NSC algorithm and division to goals */
-SPK_INFO* execute(int k, char *goal, char *filename){
+SPK_INFO* execute1(int k, char *goal, char *filename){
     /* init and allocate returned object to python */
     initSpkInfo();
     spk_info->spk_mat_filename = "input_1.txt";
+    printf("1- arrived at c from python");
     return spk_info;
     printf("2");
     /* init and allocate input's baic info */
@@ -135,7 +136,7 @@ void initMatrices(){
 }
 void initSpkInfo(){
     spk_info = (SPK_INFO*) malloc(sizeof(SPK_INFO));
-    spk_info->k = 0;
+    spk_info->k = 555;
     spk_info->spk_mat_filename = NULL;
 }
 void initInputInfo(int k, char *goal, char *filename){

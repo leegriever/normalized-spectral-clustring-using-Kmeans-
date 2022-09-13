@@ -57,4 +57,4 @@ typedef struct eigen_info
 } EIGEN_INFO;
 
 /* methods */
-SPK_INFO* execute(int k, char *goal, char *filename);
+SPK_INFO* execute1(int k, char *goal, char *filename);
