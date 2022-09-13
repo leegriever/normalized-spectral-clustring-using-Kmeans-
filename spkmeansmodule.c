@@ -19,19 +19,20 @@ static PyObject* execute_program(PyObject *self, PyObject *args){
     /* Create the result structure */
     PyList_SetItem(res, 0, Py_BuildValue("i", spk_info->k));
     PyList_SetItem(res, 1, Py_BuildValue("s", spk_info->spk_mat_filename));
+    printf("in module, filename is : %s\n", spk_info->spk_mat_filename);
     free(spk_info);
     return res;
 
 }
 
 static PyObject* execute_kmeans(PyObject *self, PyObject *args){
-    int k, n, d;
-    char * datapoints_filename;
-    char * centroids_filename;
-    if (!PyArg_ParseTuple(args, "iiiss", &k, &n, &d, &datapoints_filename, &centroids_filename)){
+    int k, n, dim;
+    char * vectorsFile;
+    char * centroidsFile;
+    if (!PyArg_ParseTuple(args, "iiiss", &k, &n, &dim, &vectorsFile, &centroidsFile)){
         return NULL;
     }
-    return Py_BuildValue("s", execute2());
+    return Py_BuildValue("s", execute2(k, n, dim, vectorsFile, centroidsFile));
 }
 
 static PyMethodDef capiMethods[] = {

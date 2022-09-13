@@ -21,22 +21,80 @@ def main():
     goal = args[2]
     input_filename = args[3]
     
-    k, output_filename = spkmm.execute_program(k, goal, input_filename)
-    print("2- returnes to python from c")
+    k, output_filename = spkmm.execute_program(k, goal, input_filename)    
     print(k)
-    print(output_filename)
-    
-
     if goal == "spk":
         executeStage6(k, output_filename)
         
-    kmeans_output_filename = spkmm.execute_kmeans(k, k, k, "input_filename", "input_filename")
-    print("4- returnes to python from c_kmeans")
-    print(kmeans_output_filename)
+    # delete spk file returnes from c
+    os.remove(output_filename)
 
 def executeStage6(k, filename):
-    return 
+    #TODO: check if vecors is what we want
+    vectors = pd.read_csv(filename, header = None)
+    vectors = vectors.to_numpy()
+    n = vectors.shape[0]
+    dim = len(vectors[0])
+    centroids, centroidIndices = initializeCentroids(k, n, vectors)
 
+    # writing vectors, centroids to files for c code to read from 
+    np.savetxt("vectorsFile", X = vectors.tolist(), fmt = '%.4f', delimiter=',', newline='\n')
+    np.savetxt("centroidsFile", X = centroids, fmt = '%.4f', delimiter=',', newline='\n')
+
+    # executing c part of kmeans
+    kmeans_output_filename = spkmm.execute_kmeans(k, n, dim, "vectorsFile", "centroidsFile")
+
+    # print spk 
+    # 1 row print
+    print(",".join(str(vIndex) for vIndex in centroidIndices))
+    # 2 row print
+    # reads file accepted from c 
+    finalCentroids = pd.read_csv(filename, header = None).to_numpy().tolist()
+    for i in range(k):
+        print(",".join(str(coordinate) for coordinate in finalCentroids[i]))
+    # print empty row
+    print("")
+
+    # delte files
+    os.remove("vectorsFile")
+    os.remove("centroidsFile")
+
+def initializeCentroids(k, n, vectors):
+    np.random.seed(0)
+    centroidsIndices = []
+    centroids = []
+    addToCentroids(n, centroidsIndices, centroids, vectors, None)
+    i = 1
+    while i < k:
+        minDistances = []
+        prob = []
+        sumOfD = 0
+        # loop over all vectors
+        for l in range(n):
+            Dl = sys.float_info.max
+            # for each vector, find min distance by checking with all possible centroids
+            for j in range(i):
+                Dl  = min(Dl, Distance(vectors[l], centroids[j]))
+            minDistances.append(Dl)
+            sumOfD += Dl 
+        # cala p for each vector  
+        for l in range(n):
+            p = minDistances[l]/sumOfD
+            prob.append(p)
+        i +=1
+        addToCentroids(n, centroidsIndices, centroids, vectors, prob)
+    return centroids, centroidsIndices
+
+def addToCentroids(n, centroidsIndices, centroids, vectors, prob):
+    randIndex = np.random.choice(n, p = prob)
+    centroidsIndices.append(int(randIndex))
+    centroids.append(list(vectors[randIndex]))
+
+def Distance(x,y):
+    sumOfSquaredDiffrence = 0
+    for i in range(len(x)):
+        sumOfSquaredDiffrence += math.pow(float(x[i])-float(y[i]),2)
+    return sumOfSquaredDiffrence
 
 def printInvalidInput():
     print("Invalid Input!")
@@ -45,7 +103,6 @@ def printInvalidInput():
 def printanErrorHasOccurred():
     print("An Error Has Occurred")
     # TODO: remove files created using:
-    os.remove("output_filename")
     sys.exit(1)
 
 

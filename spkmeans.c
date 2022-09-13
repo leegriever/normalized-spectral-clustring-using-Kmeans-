@@ -37,7 +37,7 @@ int main() {
      goal = argv[1];
      filename = argv[2]; */
     goal = "wam";
-    filename = "input_1.txt";
+    filename = "T_output";
     printf("1");
     spk_info = execute1(0, goal, filename);
     free(spk_info);
@@ -48,8 +48,9 @@ int main() {
 SPK_INFO* execute1(int k, char *goal, char *filename){
     /* init and allocate returned object to python */
     initSpkInfo();
-    spk_info->spk_mat_filename = "input_1.txt";
-    printf("1- arrived at c from python");
+    spk_info->spk_mat_filename = filename;
+    printf("execute1 in spkmeans.c %d", k);
+    spk_info->k = 2;
     return spk_info;
     printf("2");
     /* init and allocate input's baic info */
@@ -136,7 +137,7 @@ void initMatrices(){
 }
 void initSpkInfo(){
     spk_info = (SPK_INFO*) malloc(sizeof(SPK_INFO));
-    spk_info->k = 555;
+    spk_info->k = 0;
     spk_info->spk_mat_filename = NULL;
 }
 void initInputInfo(int k, char *goal, char *filename){
